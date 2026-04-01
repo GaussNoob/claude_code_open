@@ -14,19 +14,32 @@ Claude Code is an agentic coding tool that lives in your terminal, understands y
 
 ## Get started
 
-1. Install Claude Code:
+This repository is a local fork/reconstruction, not the published npm package workflow.
+
+To run this repo locally:
 
 ```sh
-npm install -g @anthropic-ai/claude-code
+npm install
+npm run start
 ```
 
-2. Navigate to your project directory and run `claude`.
+Notes:
+
+- `npm run start` launches the local CLI from this repository.
+- `npm run build` rebuilds the bundled output in `dist/` when you want to regenerate the compiled CLI.
+- The local run/build scripts use `bun` under the hood, so Bun needs to be available.
+
+If you want the official upstream package instead of this fork, then `npm install -g @anthropic-ai/claude-code` is the published-package path.
 
 ## External providers (MVP)
 
 This fork now has an experimental non-Anthropic provider path for `OpenAI`, `Gemini`, and `Ollama`.
 
-Set one of the providers below before starting the CLI:
+The external-provider path lets Claude Code keep the same terminal workflow while routing model requests through a provider-specific adapter. In practice, that means you can use the CLI without Anthropic login, keep tool calling enabled, and switch providers with either environment variables or in-product commands.
+
+## Quick start
+
+Set one provider before starting the CLI:
 
 ```sh
 # OpenAI
@@ -46,14 +59,57 @@ export OLLAMA_MODEL=qwen2.5-coder:14b
 export OLLAMA_KEEP_ALIVE=30m
 ```
 
+Then start the CLI:
+
+```sh
+npm run start
+```
+
+If you installed the published npm package globally instead of running this repo locally, the equivalent command is `claude`.
+
+You can also choose a provider from the "Continue without login" setup flow inside the CLI. That screen stores the provider in Claude Code global config and applies the matching environment variables for future sessions.
+
+## What works today
+
 Current scope of the MVP:
 
 - Main chat/tool loop works through a non-streaming adapter.
 - Tool calling is translated for the external providers above.
-- OpenAI defaults to `gpt-5.4`, Gemini defaults to `gemini-3.1-pro-preview`, and Ollama loads installed models from the local server.
+- OpenAI defaults to `gpt-5.4`, Gemini defaults to `gemini-3.1-pro-preview`, and Ollama can resolve installed models from the local server.
+- OpenAI and Gemini expose curated model lists in the picker; Ollama discovers models dynamically from the local runtime.
 - Advanced Anthropic-only features such as prompt caching, Claude-specific betas, and some multimodal blocks are not fully supported on this path yet.
 
-If `OLLAMA_MODEL` is not set, the CLI falls back to the first installed Ollama model cached from the local server. You can still override any provider model manually with `OPENAI_MODEL`, `GEMINI_MODEL`, or `OLLAMA_MODEL`.
+## Provider configuration
+
+Core variables:
+
+| Provider | Required auth | Default model | Optional endpoint override |
+| --- | --- | --- | --- |
+| OpenAI | `OPENAI_API_KEY` | `gpt-5.4` | `OPENAI_BASE_URL` |
+| Gemini | `GEMINI_API_KEY` | `gemini-3.1-pro-preview` | `GEMINI_BASE_URL` |
+| Ollama | none | `qwen2.5-coder:14b` with fallback to detected installed models | `OLLAMA_BASE_URL` |
+
+Model override variables:
+
+- `OPENAI_MODEL`, `OPENAI_SMALL_FAST_MODEL`
+- `GEMINI_MODEL`, `GEMINI_SMALL_FAST_MODEL`
+- `OLLAMA_MODEL`, `OLLAMA_SMALL_FAST_MODEL`
+
+Generic model fallback variables that are also honored by the adapter:
+
+- `CLAUDE_CODE_MODEL`
+- `ANTHROPIC_MODEL`
+- `ANTHROPIC_DEFAULT_SONNET_MODEL`
+
+Legacy compatibility flags are still recognized:
+
+- `CLAUDE_CODE_USE_OPENAI`
+- `CLAUDE_CODE_USE_GEMINI`
+- `CLAUDE_CODE_USE_OLLAMA`
+
+If `OLLAMA_MODEL` is not set, the CLI first checks cached installed models discovered from the local Ollama server and prefers `qwen2.5-coder:14b` when available. You can still override any provider model manually with `OPENAI_MODEL`, `GEMINI_MODEL`, or `OLLAMA_MODEL`.
+
+## In-product commands
 
 Convenience commands for external providers:
 
@@ -67,7 +123,13 @@ Notes for Ollama:
 
 - The first prompt can be slower because Ollama may need to load the model into memory.
 - This fork now sends `keep_alive` on Ollama chat requests and warms the selected model in the background on startup.
+- The default Ollama server URL is `http://127.0.0.1:11434`.
 - Override the keep-alive duration with `OLLAMA_KEEP_ALIVE` if you want a shorter or longer model residency.
+- `/ollama-model` lists installed models from your local `ollama` runtime and validates the selected name before saving it.
+
+## More detailed guide
+
+For a fuller walkthrough covering setup, environment variables, model resolution, command behavior, and troubleshooting for `OpenAI`, `Gemini`, and `Ollama`, see [docs/external-providers.md](./docs/external-providers.md).
 
 ## Reporting Bugs
 
