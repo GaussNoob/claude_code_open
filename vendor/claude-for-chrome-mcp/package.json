@@ -1,0 +1,9 @@
+{
+  "name": "@ant/claude-for-chrome-mcp",
+  "version": "0.0.0-stub",
+  "description": "Local stub for open-source builds; internal Anthropic package is not published to npm.",
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  }
+}
