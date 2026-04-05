@@ -15,6 +15,7 @@ type ExternalProviderConfigUpdates = {
 function getProviderLegacyEnvKeys(): string[] {
   return [
     'CLAUDE_CODE_USE_OPENAI',
+    'CLAUDE_CODE_USE_OPENROUTER',
     'CLAUDE_CODE_USE_GEMINI',
     'CLAUDE_CODE_USE_OLLAMA',
   ]

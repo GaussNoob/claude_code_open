@@ -5,6 +5,7 @@ import TextInput from '../../components/TextInput.js'
 import { COMMON_HELP_ARGS, COMMON_INFO_ARGS } from '../../constants/xml.js'
 import { Box, Text } from '../../ink.js'
 import { useKeybinding } from '../../keybindings/useKeybinding.js'
+import { useSetAppState } from '../../state/AppState.js'
 import type { LocalJSXCommandCall } from '../../types/command.js'
 import { applyConfigEnvironmentVariables } from '../../utils/managedEnv.js'
 import {
@@ -12,13 +13,14 @@ import {
   saveExternalProviderConfig,
 } from '../../utils/model/externalProviderConfig.js'
 import {
+  getConfiguredExternalModel,
   getExternalProviderApiKeyEnvName,
   getProviderDisplayName,
   type ExternalAPIProvider,
 } from '../../utils/model/providers.js'
 
 type ProviderKeyCommandProps = {
-  provider: Extract<ExternalAPIProvider, 'openai' | 'gemini'>
+  provider: Extract<ExternalAPIProvider, 'openai' | 'openrouter' | 'gemini'>
 }
 
 function maskApiKey(key: string): string {
@@ -81,12 +83,21 @@ function SaveProviderKeyAndClose({
     options?: { display?: CommandResultDisplay },
   ) => void
 }): React.ReactNode {
+  const setAppState = useSetAppState()
+
   React.useEffect(() => {
     saveProviderKey(provider, apiKey, switchProvider)
     applyConfigEnvironmentVariables()
     applyProviderKeyToProcess(provider, apiKey, switchProvider)
+    if (switchProvider) {
+      setAppState(prev => ({
+        ...prev,
+        mainLoopModel: getConfiguredExternalModel(provider),
+        mainLoopModelForSession: null,
+      }))
+    }
     onDone(formatSavedMessage(provider, apiKey))
-  }, [apiKey, onDone, provider, switchProvider])
+  }, [apiKey, onDone, provider, setAppState, switchProvider])
 
   return null
 }
@@ -117,6 +128,7 @@ function ProviderKeyPrompt({
 }): React.ReactNode {
   const providerLabel = getProviderDisplayName(provider)
   const existingKey = getConfiguredApiKey(provider)
+  const setAppState = useSetAppState()
   const [value, setValue] = React.useState('')
   const [cursorOffset, setCursorOffset] = React.useState(0)
 
@@ -136,6 +148,11 @@ function ProviderKeyPrompt({
     saveProviderKey(provider, trimmed, true)
     applyConfigEnvironmentVariables()
     applyProviderKeyToProcess(provider, trimmed, true)
+    setAppState(prev => ({
+      ...prev,
+      mainLoopModel: getConfiguredExternalModel(provider),
+      mainLoopModelForSession: null,
+    }))
     onDone(formatSavedMessage(provider, trimmed))
   }
 

@@ -13,6 +13,7 @@ type Props = {
 
 function applyExternalProviderToProcess(provider: ExternalAPIProvider): void {
   delete process.env.CLAUDE_CODE_USE_OPENAI;
+  delete process.env.CLAUDE_CODE_USE_OPENROUTER;
   delete process.env.CLAUDE_CODE_USE_GEMINI;
   delete process.env.CLAUDE_CODE_USE_OLLAMA;
   process.env.CLAUDE_CODE_API_PROVIDER = provider;
@@ -26,6 +27,7 @@ function saveExternalProvider(provider: ExternalAPIProvider): void {
   saveGlobalConfig(current => {
     const {
       CLAUDE_CODE_USE_OPENAI: _useOpenAI,
+      CLAUDE_CODE_USE_OPENROUTER: _useOpenRouter,
       CLAUDE_CODE_USE_GEMINI: _useGemini,
       CLAUDE_CODE_USE_OLLAMA: _useOllama,
       ...restEnv
@@ -55,12 +57,16 @@ export function ExternalProviderSetup({
         <Text>
           Choose which provider to use inside the CLI.
           <Newline />
-          OpenAI requires <Text bold>OPENAI_API_KEY</Text>, Gemini requires <Text bold>GEMINI_API_KEY</Text>, and Ollama uses your local server.
+          OpenAI requires <Text bold>OPENAI_API_KEY</Text>, OpenRouter requires <Text bold>OPENROUTER_API_KEY</Text>, Gemini requires <Text bold>GEMINI_API_KEY</Text>, and Ollama uses your local server.
         </Text>
         <Select defaultFocusValue={currentProvider} layout="compact-vertical" options={[{
         label: 'OpenAI',
         value: 'openai',
         description: 'Uses OPENAI_API_KEY and the configured GPT model.'
+      }, {
+        label: 'OpenRouter',
+        value: 'openrouter',
+        description: 'Uses OPENROUTER_API_KEY and OpenRouter-compatible model IDs.'
       }, {
         label: 'Google Gemini',
         value: 'gemini',

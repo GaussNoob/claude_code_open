@@ -33,7 +33,7 @@ If you want the official upstream package instead of this fork, then `npm instal
 
 ## External providers (MVP)
 
-This fork now has an experimental non-Anthropic provider path for `OpenAI`, `Gemini`, and `Ollama`.
+This fork now has an experimental non-Anthropic provider path for `OpenAI`, `OpenRouter`, `Gemini`, and `Ollama`.
 
 The external-provider path lets Claude Code keep the same terminal workflow while routing model requests through a provider-specific adapter. In practice, that means you can use the CLI without Anthropic login, keep tool calling enabled, and switch providers with either environment variables or in-product commands.
 
@@ -46,6 +46,11 @@ Set one provider before starting the CLI:
 export CLAUDE_CODE_API_PROVIDER=openai
 export OPENAI_API_KEY=your_key
 export OPENAI_MODEL=gpt-5.4
+
+# OpenRouter
+export CLAUDE_CODE_API_PROVIDER=openrouter
+export OPENROUTER_API_KEY=your_key
+export OPENROUTER_MODEL=openai/gpt-5.4
 
 # Gemini
 export CLAUDE_CODE_API_PROVIDER=gemini
@@ -75,8 +80,8 @@ Current scope of the MVP:
 
 - Main chat/tool loop works through a non-streaming adapter.
 - Tool calling is translated for the external providers above.
-- OpenAI defaults to `gpt-5.4`, Gemini defaults to `gemini-3.1-pro-preview`, and Ollama can resolve installed models from the local server.
-- OpenAI and Gemini expose curated model lists in the picker; Ollama discovers models dynamically from the local runtime.
+- OpenAI defaults to `gpt-5.4`, OpenRouter defaults to `openai/gpt-5.4`, Gemini defaults to `gemini-3.1-pro-preview`, and Ollama can resolve installed models from the local server.
+- OpenAI, OpenRouter, and Gemini expose curated model lists in the picker; Ollama discovers models dynamically from the local runtime.
 - Advanced Anthropic-only features such as prompt caching, Claude-specific betas, and some multimodal blocks are not fully supported on this path yet.
 
 ## Provider configuration
@@ -86,12 +91,14 @@ Core variables:
 | Provider | Required auth | Default model | Optional endpoint override |
 | --- | --- | --- | --- |
 | OpenAI | `OPENAI_API_KEY` | `gpt-5.4` | `OPENAI_BASE_URL` |
+| OpenRouter | `OPENROUTER_API_KEY` | `openai/gpt-5.4` | `OPENROUTER_BASE_URL` |
 | Gemini | `GEMINI_API_KEY` | `gemini-3.1-pro-preview` | `GEMINI_BASE_URL` |
 | Ollama | none | `qwen2.5-coder:14b` with fallback to detected installed models | `OLLAMA_BASE_URL` |
 
 Model override variables:
 
 - `OPENAI_MODEL`, `OPENAI_SMALL_FAST_MODEL`
+- `OPENROUTER_MODEL`, `OPENROUTER_SMALL_FAST_MODEL`
 - `GEMINI_MODEL`, `GEMINI_SMALL_FAST_MODEL`
 - `OLLAMA_MODEL`, `OLLAMA_SMALL_FAST_MODEL`
 
@@ -104,10 +111,11 @@ Generic model fallback variables that are also honored by the adapter:
 Legacy compatibility flags are still recognized:
 
 - `CLAUDE_CODE_USE_OPENAI`
+- `CLAUDE_CODE_USE_OPENROUTER`
 - `CLAUDE_CODE_USE_GEMINI`
 - `CLAUDE_CODE_USE_OLLAMA`
 
-If `OLLAMA_MODEL` is not set, the CLI first checks cached installed models discovered from the local Ollama server and prefers `qwen2.5-coder:14b` when available. You can still override any provider model manually with `OPENAI_MODEL`, `GEMINI_MODEL`, or `OLLAMA_MODEL`.
+If `OLLAMA_MODEL` is not set, the CLI first checks cached installed models discovered from the local Ollama server and prefers `qwen2.5-coder:14b` when available. You can still override any provider model manually with `OPENAI_MODEL`, `OPENROUTER_MODEL`, `GEMINI_MODEL`, or `OLLAMA_MODEL`.
 
 ## In-product commands
 
@@ -115,6 +123,8 @@ Convenience commands for external providers:
 
 - `/openai-key` or `/openai-key <apiKey>` to save an OpenAI API key
 - `/openai-model` or `/openai-model <model>` to switch OpenAI models
+- `/openrouter-key` or `/openrouter-key <apiKey>` to save an OpenRouter API key
+- `/openrouter-model` or `/openrouter-model <model>` to switch OpenRouter models
 - `/gemini-key` or `/gemini-key <apiKey>` to save a Gemini API key
 - `/gemini-model` or `/gemini-model <model>` to switch Gemini models
 - `/ollama-model` or `/ollama-model <installed-model>` to switch Ollama models
@@ -127,9 +137,16 @@ Notes for Ollama:
 - Override the keep-alive duration with `OLLAMA_KEEP_ALIVE` if you want a shorter or longer model residency.
 - `/ollama-model` lists installed models from your local `ollama` runtime and validates the selected name before saving it.
 
+Notes for OpenRouter:
+
+- `/openrouter-key` stores your `OPENROUTER_API_KEY` in Claude Code global config.
+- `/openrouter-model` tries to load the current model catalog from the OpenRouter API and prefers saving the real `provider/model` id.
+- If you paste a display name from the OpenRouter site, the command now tries to resolve it to the correct model id automatically.
+- After `/openrouter-key` or `/openrouter-model`, the current session updates the active provider/model label in the UI immediately.
+
 ## More detailed guide
 
-For a fuller walkthrough covering setup, environment variables, model resolution, command behavior, and troubleshooting for `OpenAI`, `Gemini`, and `Ollama`, see [docs/external-providers.md](./docs/external-providers.md).
+For a fuller walkthrough covering setup, environment variables, model resolution, command behavior, and troubleshooting for `OpenAI`, `OpenRouter`, `Gemini`, and `Ollama`, see [docs/external-providers.md](./docs/external-providers.md).
 
 ## Reporting Bugs
 

@@ -440,7 +440,7 @@ function OAuthStatusMessage({
       label: (
         <Text>
           Continue without login ·{' '}
-          <Text dimColor>OpenAI, Gemini, or Ollama</Text>
+          <Text dimColor>OpenAI, OpenRouter, Gemini, or Ollama</Text>
           {'\n'}
         </Text>
       ),

@@ -3,7 +3,11 @@ import { getGlobalConfig } from '../config.js'
 import { isEnvTruthy } from '../envUtils.js'
 
 export type APIProvider = 'firstParty' | 'bedrock' | 'vertex' | 'foundry'
-export type ExternalAPIProvider = 'openai' | 'gemini' | 'ollama'
+export type ExternalAPIProvider =
+  | 'openai'
+  | 'openrouter'
+  | 'gemini'
+  | 'ollama'
 export type ModelProvider = APIProvider | ExternalAPIProvider
 export type ExternalModelOption = {
   value: string
@@ -13,6 +17,8 @@ export type ExternalModelOption = {
 
 const OPENAI_DEFAULT_MAIN_MODEL = 'gpt-5.4'
 const OPENAI_DEFAULT_SMALL_FAST_MODEL = 'gpt-5-mini'
+const OPENROUTER_DEFAULT_MAIN_MODEL = 'openai/gpt-5.4'
+const OPENROUTER_DEFAULT_SMALL_FAST_MODEL = 'openai/gpt-5.4-mini'
 const GEMINI_DEFAULT_MAIN_MODEL = 'gemini-3.1-pro-preview'
 const GEMINI_DEFAULT_SMALL_FAST_MODEL = 'gemini-3-flash-preview'
 const OLLAMA_DEFAULT_MAIN_MODEL = 'qwen2.5-coder:14b'
@@ -48,6 +54,7 @@ export function getExternalAPIProvider(): ExternalAPIProvider | null {
 
   switch (explicitProvider) {
     case 'openai':
+    case 'openrouter':
     case 'gemini':
     case 'ollama':
       return explicitProvider
@@ -57,6 +64,9 @@ export function getExternalAPIProvider(): ExternalAPIProvider | null {
 
   if (isEnvTruthy(process.env.CLAUDE_CODE_USE_OPENAI)) {
     return 'openai'
+  }
+  if (isEnvTruthy(process.env.CLAUDE_CODE_USE_OPENROUTER)) {
+    return 'openrouter'
   }
   if (isEnvTruthy(process.env.CLAUDE_CODE_USE_GEMINI)) {
     return 'gemini'
@@ -76,7 +86,10 @@ export function isExternalModelProvider(
   provider: ModelProvider = getModelProvider(),
 ): provider is ExternalAPIProvider {
   return (
-    provider === 'openai' || provider === 'gemini' || provider === 'ollama'
+    provider === 'openai' ||
+    provider === 'openrouter' ||
+    provider === 'gemini' ||
+    provider === 'ollama'
   )
 }
 
@@ -86,6 +99,8 @@ export function getProviderDisplayName(
   switch (provider) {
     case 'openai':
       return 'OpenAI'
+    case 'openrouter':
+      return 'OpenRouter'
     case 'gemini':
       return 'Google Gemini'
     case 'ollama':
@@ -104,10 +119,12 @@ export function getProviderDisplayName(
 
 export function getExternalProviderApiKeyEnvName(
   provider: ExternalAPIProvider,
-): 'OPENAI_API_KEY' | 'GEMINI_API_KEY' | null {
+): 'OPENAI_API_KEY' | 'OPENROUTER_API_KEY' | 'GEMINI_API_KEY' | null {
   switch (provider) {
     case 'openai':
       return 'OPENAI_API_KEY'
+    case 'openrouter':
+      return 'OPENROUTER_API_KEY'
     case 'gemini':
       return 'GEMINI_API_KEY'
     case 'ollama':
@@ -117,10 +134,12 @@ export function getExternalProviderApiKeyEnvName(
 
 export function getExternalProviderModelEnvName(
   provider: ExternalAPIProvider,
-): 'OPENAI_MODEL' | 'GEMINI_MODEL' | 'OLLAMA_MODEL' {
+): 'OPENAI_MODEL' | 'OPENROUTER_MODEL' | 'GEMINI_MODEL' | 'OLLAMA_MODEL' {
   switch (provider) {
     case 'openai':
       return 'OPENAI_MODEL'
+    case 'openrouter':
+      return 'OPENROUTER_MODEL'
     case 'gemini':
       return 'GEMINI_MODEL'
     case 'ollama':
@@ -157,6 +176,29 @@ export function getKnownExternalModelOptions(
           value: 'gpt-5-nano',
           label: 'GPT-5 nano',
           description: 'Smallest GPT-5 model for lightweight tasks',
+        },
+      ]
+    case 'openrouter':
+      return [
+        {
+          value: OPENROUTER_DEFAULT_MAIN_MODEL,
+          label: 'OpenAI GPT-5.4',
+          description: 'OpenRouter route for the latest GPT-5.4 model',
+        },
+        {
+          value: 'anthropic/claude-sonnet-4.5',
+          label: 'Anthropic Claude Sonnet 4.5',
+          description: 'Strong coding and agentic model via OpenRouter',
+        },
+        {
+          value: 'google/gemini-2.5-pro',
+          label: 'Google Gemini 2.5 Pro',
+          description: 'High-context reasoning model via OpenRouter',
+        },
+        {
+          value: OPENROUTER_DEFAULT_SMALL_FAST_MODEL,
+          label: 'OpenAI GPT-5.4 Mini',
+          description: 'Fast and lower-cost OpenRouter model',
         },
       ]
     case 'gemini':
@@ -201,6 +243,15 @@ export function getConfiguredExternalModel(
         (mode === 'smallFast'
           ? OPENAI_DEFAULT_SMALL_FAST_MODEL
           : OPENAI_DEFAULT_MAIN_MODEL)
+      )
+    case 'openrouter':
+      return (
+        process.env[`OPENROUTER${envSuffix}`] ??
+        process.env.OPENROUTER_MODEL ??
+        genericModel ??
+        (mode === 'smallFast'
+          ? OPENROUTER_DEFAULT_SMALL_FAST_MODEL
+          : OPENROUTER_DEFAULT_MAIN_MODEL)
       )
     case 'gemini':
       return (

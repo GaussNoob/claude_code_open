@@ -98,7 +98,7 @@ function OllamaModelPickerCommand({
     void warmupOllamaModel(model);
     setAppState(prev => ({
       ...prev,
-      mainLoopModel: null,
+      mainLoopModel: model,
       mainLoopModelForSession: null,
     }));
     onDone(formatSelectionMessage(model));
@@ -164,7 +164,7 @@ function SetOllamaModelAndClose({
     void warmupOllamaModel(model);
     setAppState(prev => ({
       ...prev,
-      mainLoopModel: null,
+      mainLoopModel: model,
       mainLoopModelForSession: null,
     }));
     onDone(formatSelectionMessage(model));

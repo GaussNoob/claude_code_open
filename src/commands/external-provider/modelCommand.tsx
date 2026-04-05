@@ -20,7 +20,7 @@ import {
 } from '../../utils/model/providers.js'
 
 type ProviderModelCommandProps = {
-  provider: Extract<ExternalAPIProvider, 'openai' | 'gemini'>
+  provider: Extract<ExternalAPIProvider, 'openai' | 'openrouter' | 'gemini'>
 }
 
 type PickerProps = ProviderModelCommandProps & {
@@ -73,7 +73,7 @@ function ProviderModelPicker({
     applyProviderModelToProcess(provider, model)
     setAppState(prev => ({
       ...prev,
-      mainLoopModel: null,
+      mainLoopModel: model,
       mainLoopModelForSession: null,
     }))
     onDone(formatSelectionMessage(provider, model))
@@ -143,9 +143,10 @@ function SetProviderModelAndClose({
     saveProviderModel(provider, model)
     applyConfigEnvironmentVariables()
     applyProviderModelToProcess(provider, model)
+    const resolvedModel = model ?? getConfiguredExternalModel(provider)
     setAppState(prev => ({
       ...prev,
-      mainLoopModel: null,
+      mainLoopModel: resolvedModel,
       mainLoopModelForSession: null,
     }))
 

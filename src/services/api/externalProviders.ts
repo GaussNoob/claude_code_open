@@ -17,6 +17,15 @@ import {
   getProviderDisplayName,
   type ExternalAPIProvider,
 } from '../../utils/model/providers.js'
+import {
+  applyExternalProviderConfigToProcess,
+  saveExternalProviderConfig,
+} from '../../utils/model/externalProviderConfig.js'
+import {
+  getOpenRouterBaseUrl,
+  listOpenRouterModels,
+  resolveOpenRouterModelId,
+} from '../../utils/model/openrouter.js'
 import { toolToAPISchema } from '../../utils/api.js'
 import { EMPTY_USAGE } from './emptyUsage.js'
 
@@ -485,10 +494,71 @@ async function queryOpenAI(
   normalizedMessages: ReturnType<typeof normalizeMessagesForAPI>,
   toolSchemas: ToolSchema[],
 ): Promise<AssistantMessage> {
-  const apiKey = requireApiKey('openai', 'OPENAI_API_KEY')
-  const providerLabel = getProviderDisplayName('openai')
+  return queryOpenAICompatibleProvider(
+    params,
+    normalizedMessages,
+    toolSchemas,
+    {
+      provider: 'openai',
+      apiKeyEnvName: 'OPENAI_API_KEY',
+      baseUrl: getOpenAIBaseUrl(),
+    },
+  )
+}
+
+async function queryOpenRouter(
+  params: ExternalQueryParams,
+  normalizedMessages: ReturnType<typeof normalizeMessagesForAPI>,
+  toolSchemas: ToolSchema[],
+): Promise<AssistantMessage> {
+  let resolvedModel = params.options.model
+  const { models } = await listOpenRouterModels()
+  const matchedModelId = resolveOpenRouterModelId(params.options.model, models)
+
+  if (matchedModelId && matchedModelId !== params.options.model) {
+    resolvedModel = matchedModelId
+    logForDebugging(
+      `[ExternalProviders] Resolved OpenRouter model '${params.options.model}' -> '${resolvedModel}'`,
+    )
+    saveExternalProviderConfig('openrouter', {
+      model: resolvedModel,
+      switchProvider: false,
+    })
+    applyExternalProviderConfigToProcess('openrouter', {
+      model: resolvedModel,
+      switchProvider: false,
+    })
+  }
+
+  return queryOpenAICompatibleProvider(
+    params,
+    normalizedMessages,
+    toolSchemas,
+    {
+      provider: 'openrouter',
+      apiKeyEnvName: 'OPENROUTER_API_KEY',
+      baseUrl: getOpenRouterBaseUrl(),
+      model: resolvedModel,
+    },
+  )
+}
+
+async function queryOpenAICompatibleProvider(
+  params: ExternalQueryParams,
+  normalizedMessages: ReturnType<typeof normalizeMessagesForAPI>,
+  toolSchemas: ToolSchema[],
+  config: {
+    provider: Extract<ExternalAPIProvider, 'openai' | 'openrouter'>
+    apiKeyEnvName: 'OPENAI_API_KEY' | 'OPENROUTER_API_KEY'
+    baseUrl: string
+    model?: string
+  },
+): Promise<AssistantMessage> {
+  const apiKey = requireApiKey(config.provider, config.apiKeyEnvName)
+  const providerLabel = getProviderDisplayName(config.provider)
+  const selectedModel = config.model ?? params.options.model
   const body: Record<string, unknown> = {
-    model: params.options.model,
+    model: selectedModel,
     messages: [
       ...(params.systemPrompt.length > 0
         ? [
@@ -521,7 +591,7 @@ async function queryOpenAI(
   }
 
   const { data, headers } = await fetchJson(
-    `${getOpenAIBaseUrl()}/chat/completions`,
+    `${config.baseUrl}/chat/completions`,
     {
       method: 'POST',
       headers: {
@@ -531,7 +601,7 @@ async function queryOpenAI(
       body: JSON.stringify(body),
       signal: params.signal,
     },
-    'openai',
+    config.provider,
   )
 
   const choice = Array.isArray(data.choices)
@@ -568,7 +638,7 @@ async function queryOpenAI(
 
   const usage = (data.usage ?? {}) as Record<string, unknown>
   return buildAssistantMessage(
-    (message.model as string | undefined) ?? params.options.model,
+    (message.model as string | undefined) ?? selectedModel,
     content,
     {
       input_tokens: (usage.prompt_tokens as number | undefined) ?? 0,
@@ -803,6 +873,8 @@ export async function queryExternalProvider(
   switch (provider) {
     case 'openai':
       return queryOpenAI(params, normalizedMessages, toolSchemas)
+    case 'openrouter':
+      return queryOpenRouter(params, normalizedMessages, toolSchemas)
     case 'gemini':
       return queryGemini(params, normalizedMessages, toolSchemas)
     case 'ollama':

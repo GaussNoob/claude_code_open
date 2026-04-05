@@ -248,7 +248,7 @@ export function buildAPIProviderProperties(): Property[] {
       label: 'Model',
       value: getConfiguredExternalModel(externalProvider)
     }];
-    const baseUrl = externalProvider === 'openai' ? process.env.OPENAI_BASE_URL : externalProvider === 'gemini' ? process.env.GEMINI_BASE_URL : process.env.OLLAMA_BASE_URL;
+    const baseUrl = externalProvider === 'openai' ? process.env.OPENAI_BASE_URL : externalProvider === 'openrouter' ? process.env.OPENROUTER_BASE_URL : externalProvider === 'gemini' ? process.env.GEMINI_BASE_URL : process.env.OLLAMA_BASE_URL;
     if (baseUrl) {
       properties.push({
         label: 'Base URL',

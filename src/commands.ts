@@ -38,6 +38,8 @@ import onboarding from './commands/onboarding/index.js'
 import ollamaModel from './commands/ollama-model/index.js'
 import openaiKey from './commands/openai-key/index.js'
 import openaiModel from './commands/openai-model/index.js'
+import openrouterKey from './commands/openrouter-key/index.js'
+import openrouterModel from './commands/openrouter-model/index.js'
 import pr_comments from './commands/pr_comments/index.js'
 import releaseNotes from './commands/release-notes/index.js'
 import rename from './commands/rename/index.js'
@@ -298,6 +300,8 @@ const COMMANDS = memoize((): Command[] => [
   ollamaModel,
   openaiKey,
   openaiModel,
+  openrouterKey,
+  openrouterModel,
   outputStyle,
   remoteEnv,
   plugin,
