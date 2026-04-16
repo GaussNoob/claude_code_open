@@ -358,3 +358,10 @@ These are sensible defaults for first use with this fork:
 - OpenRouter: `openai/gpt-5.4`
 - Gemini: `gemini-3.1-pro-preview`
 - Ollama: a locally installed coding model that already responds well in `ollama list`, with `qwen2.5-coder:14b` as the built-in default
+# # #   N a t i v e   O l l a m a   T o o l   E x e c u t i o n 
+   C l a u d e   C o d e   O p e n   n o w   p a t c h e s   t h e   p a r s e r   t o   i n t e r c e p t   t h e   s t r i c t   J S O N   O b j e c t   t o o l   a r g u m e n t   s t r u c t u r e   r e t u r n e d   n a t i v e l y   b y   O l l a m a   ( b y p a s s i n g   s t r i c t l y   t y p e d   O p e n A I   r e g e x   v a l i d a t i o n s ) .   T h i s   p r o v i d e s   s t a b l e   f i l e   m o d i f i c a t i o n   o u t - o f - t h e - b o x   w h e n   p r o m p t i n g   f o r   c o m p l e x   f i l e s . 
+ 
+   # # #   D y n a m i c   M o d e l   D i s c o v e r y 
+   U n l i k e   h a r d c o d e d   m o d e l   l i s t s ,   c o n f i g u r i n g   O l l a m a   t r i g g e r s   a   l o c a l   d i s c o v e r y   p i n g   d u r i n g   s t a r t u p .   I f   y o u   d o   n o t   s e e   \ q w e n \ ,   \ l l a m a 3 \ ,   o r   o t h e r   m o d e l s   i n   t h e   r e g u l a r   \ / m o d e l \   p r o m p t   i m m e d i a t e l y   d u e   t o   c a c h i n g ,   y o u   c a n   a l w a y s   i n v o k e   t h e m   d y n a m i c a l l y : 
+   -   R u n   \ / o l l a m a - m o d e l \   t o   q u e r y   y o u r   l i v e   t e r m i n a l   \ o l l a m a   l i s t \   o u t p u t   a n d   b y p a s s   s t a r t u p   c a c h i n g .  
+ 

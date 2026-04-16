@@ -297,6 +297,73 @@ function buildOpenAIMessages(
   return out
 }
 
+/**
+ * Build messages in Ollama's native /api/chat format.
+ *
+ * Key differences from OpenAI format:
+ * - Tool results use `tool_name` instead of `tool_call_id`
+ * - Assistant tool_calls keep `arguments` as an object (not a JSON string)
+ * - Tool calls don't include `id` or `type` fields
+ */
+function buildOllamaMessages(
+  messages: ReturnType<typeof normalizeMessagesForAPI>,
+  providerLabel: string,
+): Array<Record<string, unknown>> {
+  const out: Array<Record<string, unknown>> = []
+
+  // Map tool_use_id -> tool name so we can populate tool_name on tool results
+  const toolNameById = new Map<string, string>()
+
+  for (const message of messages) {
+    if (message.type === 'user') {
+      const blocks =
+        typeof message.message.content === 'string' ? [] : message.message.content
+      const text = messageContentToText(message.message.content, providerLabel)
+      if (text.trim()) {
+        out.push({ role: 'user', content: text })
+      }
+      for (const block of blocks) {
+        if (block.type === 'tool_result') {
+          // Ollama native API uses tool_name (not tool_call_id) to associate
+          // tool results with their originating calls.
+          out.push({
+            role: 'tool',
+            content: toolResultContentToString(block.content),
+            ...(toolNameById.has(block.tool_use_id)
+              ? { tool_name: toolNameById.get(block.tool_use_id) }
+              : {}),
+          })
+        }
+      }
+      continue
+    }
+
+    // Assistant message
+    const text = messageContentToText(message.message.content, providerLabel)
+    const toolCalls = message.message.content
+      .filter(block => block.type === 'tool_use')
+      .map(block => {
+        // Track the id -> name mapping for later tool_result messages
+        toolNameById.set(block.id, block.name)
+        return {
+          function: {
+            name: block.name,
+            // Ollama expects arguments as a JSON object, not a string
+            arguments: block.input ?? {},
+          },
+        }
+      })
+
+    out.push({
+      role: 'assistant',
+      ...(text.trim() ? { content: text } : { content: '' }),
+      ...(toolCalls.length > 0 ? { tool_calls: toolCalls } : {}),
+    })
+  }
+
+  return out
+}
+
 function buildGeminiContents(
   messages: ReturnType<typeof normalizeMessagesForAPI>,
   providerLabel: string,
@@ -755,7 +822,7 @@ async function queryOllama(
             },
           ]
         : []),
-      ...buildOpenAIMessages(normalizedMessages, providerLabel),
+      ...buildOllamaMessages(normalizedMessages, providerLabel),
     ],
     stream: false,
     keep_alive: getOllamaKeepAlive(),
@@ -797,7 +864,9 @@ async function queryOllama(
         type: 'tool_use',
         id: `toolu_${randomUUID().replaceAll('-', '')}`,
         name: (fn.name as string | undefined) ?? 'unknown_tool',
-        input: safeJsonParse(fn.arguments ?? {}) as Record<string, unknown>,
+        input: (typeof fn.arguments === 'string'
+          ? safeJsonParse(fn.arguments)
+          : (fn.arguments ?? {})) as Record<string, unknown>,
       } as BetaContentBlock)
     }
   }
